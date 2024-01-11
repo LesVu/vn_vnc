@@ -1,5 +1,5 @@
-1. Fix the multilib
-2. Change to arm64
+1. Fix the multilib (no multilib)
+2. Change to arm64 (done)
 3. Sound
 4. Vnc
 5. Openbox autostart

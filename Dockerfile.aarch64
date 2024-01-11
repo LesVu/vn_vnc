@@ -1,0 +1,25 @@
+FROM alpine:latest as setup
+
+RUN apk add --no-cache libarchive-tools wget && wget -q http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz -O /tmp/ArchLinuxARM-aarch64-latest.tar.gz && mkdir /rootfs && bsdtar -xpf /tmp/ArchLinuxARM-aarch64-latest.tar.gz -C /rootfs
+
+FROM scratch as archlinux
+COPY --from=setup /rootfs/ /
+ENV LANG=C.UTF-8
+
+WORKDIR /root/
+RUN pacman-key --init && pacman-key --populate archlinuxarm
+RUN pacman -Rs --noconfirm linux-aarch64 linux-firmware mkinitcpio linux-firmware-whence
+
+RUN pacman -Sy --noconfirm mesa lutris moreutils git base-devel tigervnc openbox
+
+RUN useradd --no-create-home --shell=/bin/false build && usermod -L build && echo "build ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+USER build
+RUN git clone https://aur.archlinux.org/box86-git.git && cd box86-git && makepkg -s
+RUN git clone https://aur.archlinux.org/box64-git.git && cd box64-git && makepkg -s
+
+USER root
+RUN pacman -U *.pkg.tar.xz
+
+
+ENTRYPOINT [ "/bin/bash" ]

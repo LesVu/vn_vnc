@@ -31,4 +31,4 @@ jobs:
           context: .
           platforms: linux/arm64
           push: ${{ inputs.push }}
-          tags: user/test:latest
+          tags: lesvu/vn_vnc:latest

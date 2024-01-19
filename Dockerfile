@@ -11,7 +11,7 @@ RUN dpkg --add-architecture armhf && echo 'deb http://deb.debian.org/debian sid 
   gnupg lsb-release curl tar unzip zip \
   apt-transport-https ca-certificates sudo gpg-agent software-properties-common zlib1g-dev \
   zstd gettext libcurl4-openssl-dev inetutils-ping jq wget dirmngr openssh-client locales \
-  && apt-get install -q -y lutris git cmake binfmt-support wayvnc wayfire xwayland kitty kanshi && rm -rf /var/lib/apt/lists/*
+  && apt-get install -q -y lutris git cmake binfmt-support wayvnc wayfire xwayland kanshi xterm dbus-x11 vim && rm -rf /var/lib/apt/lists/*
 
 RUN wget https://itai-nelken.github.io/weekly-box86-debs/debian/box86.list -O /etc/apt/sources.list.d/box86.list && wget -qO- https://itai-nelken.github.io/weekly-box86-debs/debian/KEY.gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/box86-debs-archive-keyring.gpg && apt-get update && apt-get install box86:armhf -y -q && rm -rf /var/lib/apt/lists/*
 
@@ -19,14 +19,17 @@ RUN wget https://ryanfortner.github.io/box64-debs/box64.list -O /etc/apt/sources
 
 COPY files/binfmts/* /usr/share/binfmts
 RUN update-binfmts --import
-RUN mkdir -p $HOME/.local/share/lutris/runners/wine/ && cd $HOME/.local/share/lutris/runners/wine/ && wget -q https://github.com/GloriousEggroll/wine-ge-custom/releases/download/GE-Proton8-25/wine-lutris-GE-Proton8-25-x86_64.tar.xz -O wine.tar.xz && tar -xvf wine.tar.xz && rm wine.tar.xz
 
 RUN useradd -m -s /bin/bash -G sudo,video,input,audio,render ${user} && echo "${user}:${user}" | chpasswd && echo '%sudo ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
 COPY files/start.sh /start.sh
 COPY files/wayfire.ini /home/${user}/.config/wayfire.ini
-RUN chown -R ${user}:${user} /home/${user}
+RUN mkdir -p /Games && chown -R ${user}:${user} /home/${user}
+
+RUN mkdir -p /home/${user}/.local/share/lutris/runners/wine/ && cd /home/${user}/.local/share/lutris/runners/wine/ && wget -q https://github.com/GloriousEggroll/wine-ge-custom/releases/download/GE-Proton8-25/wine-lutris-GE-Proton8-25-x86_64.tar.xz -O wine.tar.xz && tar -xvf wine.tar.xz && rm wine.tar.xz
 
 USER ${user}
 WORKDIR /home/${user}
 CMD [ "/start.sh" ]
+EXPOSE 5900
+VOLUME [ "/Games" ]

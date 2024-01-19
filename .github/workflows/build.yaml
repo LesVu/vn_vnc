@@ -28,7 +28,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: Dockerfile
+          context: .
           platforms: linux/arm64
           push: ${{ inputs.push }}
           tags: user/test:latest

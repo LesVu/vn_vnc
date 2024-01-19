@@ -1,21 +1,32 @@
-FROM archlinux:latest
+FROM debian:sid
 
-RUN pacman -Syu --noconfirm && pacman -S --noconfirm mesa lutris moreutils git base-devel tigervnc openbox && tac /etc/pacman.conf | sed -i '0,/#Include/{s/#Include/Include/}' | tac | sponge /etc/pacman.conf
+ARG user=char
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games
 
-# RUN pacman -Syu --noconfirm && sudo pacman -S --noconfirm --needed wine-staging giflib lib32-giflib libpng lib32-libpng libldap lib32-libldap gnutls lib32-gnutls \
-# mpg123 lib32-mpg123 openal lib32-openal v4l-utils lib32-v4l-utils libpulse lib32-libpulse libgpg-error \
-# lib32-libgpg-error alsa-plugins lib32-alsa-plugins alsa-lib lib32-alsa-lib libjpeg-turbo lib32-libjpeg-turbo \
-# sqlite lib32-sqlite libxcomposite lib32-libxcomposite libxinerama lib32-libgcrypt libgcrypt lib32-libxinerama \
-# ncurses lib32-ncurses ocl-icd lib32-ocl-icd libxslt lib32-libxslt libva lib32-libva gtk3 \
-# lib32-gtk3 gst-plugins-base-libs lib32-gst-plugins-base-libs vulkan-icd-loader lib32-vulkan-icd-loader
+RUN dpkg --add-architecture armhf && echo 'deb http://deb.debian.org/debian sid contrib' > /etc/apt/sources.list && apt-get update \
+  && apt-get full-upgrade -y -q \
+  && apt-get install libc6:armhf -y -q \
+  && apt-get install -q -y --no-install-recommends \
+  gnupg lsb-release curl tar unzip zip \
+  apt-transport-https ca-certificates sudo gpg-agent software-properties-common zlib1g-dev \
+  zstd gettext libcurl4-openssl-dev inetutils-ping jq wget dirmngr openssh-client locales \
+  && apt-get install -q -y lutris git cmake binfmt-support wayvnc wayfire xwayland kitty kanshi && rm -rf /var/lib/apt/lists/*
 
-RUN useradd --no-create-home --shell=/bin/false build && usermod -L build && echo "build ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+RUN wget https://itai-nelken.github.io/weekly-box86-debs/debian/box86.list -O /etc/apt/sources.list.d/box86.list && wget -qO- https://itai-nelken.github.io/weekly-box86-debs/debian/KEY.gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/box86-debs-archive-keyring.gpg && apt-get update && apt-get install box86:armhf -y -q && rm -rf /var/lib/apt/lists/*
 
-USER build
-RUN git clone https://aur.archlinux.org/box86-git.git && cd box86-git && makepkg -s
-RUN git clone https://aur.archlinux.org/box64-git.git && cd box64-git && makepkg -s
+RUN wget https://ryanfortner.github.io/box64-debs/box64.list -O /etc/apt/sources.list.d/box64.list && wget -qO- https://ryanfortner.github.io/box64-debs/KEY.gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/box64-debs-archive-keyring.gpg && apt-get update && apt-get install box64-arm64 -y -q && rm -rf /var/lib/apt/lists/*
 
-USER root
-RUN pacman -U *.pkg.tar.xz
+COPY files/binfmts/* /usr/share/binfmts
+RUN update-binfmts --import
+RUN mkdir -p $HOME/.local/share/lutris/runners/wine/ && cd $HOME/.local/share/lutris/runners/wine/ && wget -q https://github.com/GloriousEggroll/wine-ge-custom/releases/download/GE-Proton8-25/wine-lutris-GE-Proton8-25-x86_64.tar.xz -O wine.tar.xz && tar -xvf wine.tar.xz && rm wine.tar.xz
 
+RUN useradd -m -s /bin/bash -G sudo,video,input,audio,render ${user} && echo "${user}:${user}" | chpasswd && echo '%sudo ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
+COPY files/start.sh /start.sh
+COPY files/wayfire.ini /home/${user}/.config/wayfire.ini
+RUN chown -R ${user}:${user} /home/${user}
+
+USER ${user}
+WORKDIR /home/${user}
+CMD [ "/start.sh" ]

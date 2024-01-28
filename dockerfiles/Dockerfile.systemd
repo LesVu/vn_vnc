@@ -23,7 +23,7 @@ RUN wget https://ryanfortner.github.io/box64-debs/box64.list -O /etc/apt/sources
 RUN useradd -m -s /bin/bash -G sudo,video,input,audio,render ${user} && echo "${user}:${user}" | chpasswd && echo '%sudo ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
 # COPY files/start.sh /start.sh
-COPY ../files/wayfire.ini /home/${user}/.config/wayfire.ini
+COPY files/wayfire.ini /home/${user}/.config/wayfire.ini
 
 RUN sudo cat <<'EOF' > "/start.sh"
 #!/bin/bash

@@ -32,7 +32,15 @@ RUN mkdir -p /home/${user}/.local/share/lutris/runners/wine/ && cd /home/${user}
 RUN mkdir -p /Games && echo "load-module module-native-protocol-tcp auth-anonymous=1" >> /etc/pulse/default.pa && chown -R ${user}:${user} /home/${user}
 
 USER ${user}
-RUN cd && wget -q https://raw.githubusercontent.com/ptitSeb/box86/master/install_steam.sh && sh install_steam.sh && rm install_steam.sh
+RUN <<EOF
+cd && mkdir -p ~/steam/tmp && cd ~/steam/tmp && wget -q https://cdn.cloudflare.steamstatic.com/client/installer/steam.deb && ar x steam.deb && tar xf data.tar.xz && rm ./*.tar.xz ./steam.deb && mv ./usr/* ../ && cd ../ && rm -rf ./tmp/
+echo "#!/bin/bash
+export STEAMOS=1
+export STEAM_RUNTIME=1
+export DBUS_FATAL_WARNINGS=0
+~/steam/bin/steam $@" > steam
+chmod +x steam && sudo mv steam /usr/local/bin/ && sudo apt-get update && sudo apt-get install -y -q libc6:armhf libsdl2-2.0-0:armhf libsdl2-image-2.0-0:armhf libsdl2-mixer-2.0-0:armhf libsdl2-ttf-2.0-0:armhf libopenal1:armhf libpng16-16:armhf libfontconfig1:armhf libxcomposite1:armhf libbz2-1.0:armhf libxtst6:armhf libsm6:armhf libice6:armhf libgl1:armhf libxinerama1:armhf libxdamage1:armhf libncurses6:armhf libgl1-mesa-dri:armhf
+EOF
 
 WORKDIR /home/${user}
 CMD [ "/start.sh" ]

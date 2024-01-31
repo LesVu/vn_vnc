@@ -11,7 +11,7 @@ RUN dpkg --add-architecture armhf && echo 'deb http://deb.debian.org/debian sid 
   gnupg lsb-release curl tar unzip zip \
   apt-transport-https ca-certificates sudo gpg-agent software-properties-common zlib1g-dev \
   zstd gettext libcurl4-openssl-dev inetutils-ping jq wget dirmngr openssh-client locales \
-  && apt-get install -q -y lutris git cmake binfmt-support wayvnc wayfire xwayland kanshi xterm dbus-x11 vim zenity pulseaudio && rm -rf /var/lib/apt/lists/*
+  && apt-get install -q -y lutris git cmake binfmt-support wayvnc wayfire xwayland kanshi xterm dbus-x11 vim zenity pulseaudio bemenu policykit-1-gnome xdg-desktop-portal-wlr && rm -rf /var/lib/apt/lists/*
 
 RUN wget https://itai-nelken.github.io/weekly-box86-debs/debian/box86.list -O /etc/apt/sources.list.d/box86.list && wget -qO- https://itai-nelken.github.io/weekly-box86-debs/debian/KEY.gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/box86-debs-archive-keyring.gpg && apt-get update && apt-get install box86:armhf -y -q && rm -rf /var/lib/apt/lists/*
 
@@ -40,6 +40,7 @@ export STEAM_RUNTIME=1
 export DBUS_FATAL_WARNINGS=0
 ~/steam/bin/steam $@" > steam
 chmod +x steam && sudo mv steam /usr/local/bin/ && sudo apt-get update && sudo apt-get install -y -q libc6:armhf libsdl2-2.0-0:armhf libsdl2-image-2.0-0:armhf libsdl2-mixer-2.0-0:armhf libsdl2-ttf-2.0-0:armhf libopenal1:armhf libpng16-16:armhf libfontconfig1:armhf libxcomposite1:armhf libbz2-1.0:armhf libxtst6:armhf libsm6:armhf libice6:armhf libgl1:armhf libxinerama1:armhf libxdamage1:armhf libncurses6:armhf libgl1-mesa-dri:armhf
+wget -q https://github.com/rustdesk/rustdesk/releases/download/1.2.3/rustdesk-1.2.3-aarch64.deb -O rustdesk.deb && apt-get install -f -y -q ./rustdesk.deb && rm rustdesk.deb
 EOF
 
 WORKDIR /home/${user}

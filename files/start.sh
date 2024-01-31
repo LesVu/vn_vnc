@@ -12,5 +12,7 @@ sudo chown root:video /dev/dri/renderD128
 sudo mkdir -p $XDG_RUNTIME_DIR
 sudo chown $(id -nu):$(id -ng) $XDG_RUNTIME_DIR
 sudo chown -R $(id -nu):$(id -ng) /Games
+
+sudo service dbus start
 wayfire
 # wayvnc 0.0.0.0

@@ -13,6 +13,8 @@ sudo mkdir -p $XDG_RUNTIME_DIR
 sudo chown $(id -nu):$(id -ng) $XDG_RUNTIME_DIR
 sudo chown -R $(id -nu):$(id -ng) /Games
 
-sudo service dbus start
+# sudo service dbus restart
+# sudo /usr/bin/rustdesk --service &
+# sudo /usr/lib/polkit-1/polkitd &
 wayfire
 # wayvnc 0.0.0.0

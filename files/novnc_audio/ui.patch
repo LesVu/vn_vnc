@@ -1,0 +1,28 @@
+diff --git a/app/ui.js b/app/ui.js
+index f27dfe2..46ceb74 100644
+--- a/app/ui.js
++++ b/app/ui.js
+@@ -17,6 +17,7 @@ import keysyms from "../core/input/keysymdef.js";
+ import Keyboard from "../core/input/keyboard.js";
+ import RFB from "../core/rfb.js";
+ import * as WebUtil from "./webutil.js";
++import WsAudio from "../audio.js";
+ 
+ const PAGE_TITLE = "noVNC";
+ 
+@@ -1042,6 +1043,7 @@ const UI = {
+         url += '/' + path;
+ 
+         try {
++	    UI.audio = WsAudio();
+             UI.rfb = new RFB(document.getElementById('noVNC_container'), url,
+                              { shared: UI.getSetting('shared'),
+                                repeaterID: UI.getSetting('repeaterID'),
+@@ -1074,6 +1076,7 @@ const UI = {
+     },
+ 
+     disconnect() {
++	UI.audio.close();
+         UI.rfb.disconnect();
+ 
+         UI.connected = false;

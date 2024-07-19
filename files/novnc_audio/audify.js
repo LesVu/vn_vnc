@@ -1,13 +1,13 @@
 const { RtAudio, RtAudioFormat } = require("audify");
 const { WebSocket, WebSocketServer } = require("ws");
 
-var wss = new WebSocketServer({
-  port: 5700,
+const wss = new WebSocketServer({
+	port: 5700,
 });
 
 console.log("Server ready...");
 wss.on("connection", (_) => {
-  console.log("Socket connected. sending data...");
+	console.log("Socket connected. sending data...");
 });
 
 // Init RtAudio instance using default sound API
@@ -16,28 +16,28 @@ rtAudio.outputVolume = 0;
 
 // Open the input/output stream
 rtAudio.openStream(
-  {
-    deviceId: rtAudio.getDefaultOutputDevice(), // Output device id (Get all devices using `getDevices`)
-    nChannels: 2, // Number of channels
-    firstChannel: 0, // First channel index on device (default = 0).
-  },
-  {
-    deviceId: rtAudio.getDefaultInputDevice(), // Input device id (Get all devices using `getDevices`)
-    nChannels: 2, // Number of channels
-    firstChannel: 0, // First channel index on device (default = 0).
-  },
-  RtAudioFormat.RTAUDIO_SINT16, // PCM Format - Signed 16-bit integer
-  48000, // Sampling rate is 44.1kHz
-  480, // Frame size is 1920 (40ms)
-  "MyStream", // The name of the stream (used for JACK Api)
-  (data) => {
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(data);
-      }
-    });
-    rtAudio.write(data);
-  }, // Input callback function, write every input pcm data to the output buffer
+	{
+		deviceId: rtAudio.getDefaultOutputDevice(), // Output device id (Get all devices using `getDevices`)
+		nChannels: 2, // Number of channels
+		firstChannel: 0, // First channel index on device (default = 0).
+	},
+	{
+		deviceId: rtAudio.getDefaultInputDevice(), // Input device id (Get all devices using `getDevices`)
+		nChannels: 2, // Number of channels
+		firstChannel: 0, // First channel index on device (default = 0).
+	},
+	RtAudioFormat.RTAUDIO_SINT16, // PCM Format - Signed 16-bit integer
+	48000, // Sampling rate is 44.1kHz
+	480, // Frame size is 1920 (40ms)
+	"MyStream", // The name of the stream (used for JACK Api)
+	(data) => {
+		for (const client of wss.clients) {
+			if (client.readyState === WebSocket.OPEN) {
+				client.send(data);
+			}
+		}
+		rtAudio.write(data);
+	}, // Input callback function, write every input pcm data to the output buffer
 );
 
 // Start the stream

@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# export WLR_RENDER_DRM_DEVICE=/dev/dri/card1
+export WLR_RENDER_DRM_DEVICE=/dev/dri/card1
 export XDG_RUNTIME_DIR=/run/user/1000
 export WLR_LIBINPUT_NO_DEVICES=1
 export WLR_BACKENDS=headless
 
-sudo update-binfmts --enable box86.conf
-sudo update-binfmts --enable box64.conf
+sudo update-binfmts --enable FEX-x86
+sudo update-binfmts --enable FEX-x86_64
 sudo chown root:video /dev/dri/card*
 sudo chown root:render /dev/dri/render*
 sudo mkdir -p $XDG_RUNTIME_DIR

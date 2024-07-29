@@ -5,12 +5,6 @@ on:
     # * is a special character in YAML so you have to quote this string
     - cron: "0 4 */2 * *"
   workflow_dispatch:
-    inputs:
-      push:
-        description: Whether to push or not
-        required: false
-        default: false
-        type: boolean
 
 jobs:
   docker:
@@ -32,5 +26,4 @@ jobs:
         with:
           context: .
           platforms: linux/arm64
-          push: ${{ inputs.push == '' || inputs.push }}
           tags: lesvu/vn_vnc:latest

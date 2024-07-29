@@ -9,7 +9,7 @@ on:
       push:
         description: Whether to push or not
         required: false
-        default: true
+        default: false
         type: boolean
 
 jobs:
@@ -23,15 +23,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to Docker Hub
-        if: ${{ inputs.push }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/arm64
-          push: ${{ inputs.push }}
+          push: ${{ inputs.push == '' || inputs.push }}
           tags: lesvu/vn_vnc:latest

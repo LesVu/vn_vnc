@@ -21,9 +21,17 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push
+      - name: Build and push Fex Image
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: "{context}/Dockerfile.fex"
           platforms: linux/arm64
-          tags: lesvu/vn_vnc:latest
+          tags: lesvu/vn_vnc:fex
+      - name: Build and push Box64 Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: "{context}/Dockerfile.boxed"
+          platforms: linux/arm64
+          tags: lesvu/vn_vnc:boxed

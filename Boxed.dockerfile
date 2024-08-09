@@ -7,6 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games
 
 RUN <<EOF
+dpkg --add-architecture armhf
 echo "Types: deb
 URIs: http://deb.debian.org/debian
 Suites: sid
@@ -14,6 +15,7 @@ Components: main contrib non-free non-free-firmware
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg" > /etc/apt/sources.list.d/debian.sources
 apt-get update 
 apt-get full-upgrade -y -q 
+apt-get install libc6:armhf -y -q
 
 apt-get install -q -y --no-install-recommends \
   gnupg lsb-release curl tar unzip zip \
@@ -26,31 +28,31 @@ rm -rf /var/lib/apt/lists/*
 EOF
 
 RUN <<EOF
-apt-get update
-apt-get install -y -q git cmake ninja-build pkgconf ccache clang llvm lld binfmt-support \
-  libsdl2-dev libepoxy-dev libssl-dev python3-setuptools squashfs-tools squashfuse libc-bin
+wget -qO- "https://pi-apps-coders.github.io/box86-debs/KEY.gpg" | gpg --dearmor -o /usr/share/keyrings/box86-archive-keyring.gpg
+wget -qO- "https://pi-apps-coders.github.io/box64-debs/KEY.gpg" | gpg --dearmor -o /usr/share/keyrings/box64-archive-keyring.gpg
+
+echo "Types: deb
+URIs: https://Pi-Apps-Coders.github.io/box86-debs/debian
+Suites: ./
+Signed-By: /usr/share/keyrings/box86-archive-keyring.gpg" | tee /etc/apt/sources.list.d/box86.sources >/dev/null
+echo "Types: deb
+URIs: https://Pi-Apps-Coders.github.io/box64-debs/debian
+Suites: ./
+Signed-By: /usr/share/keyrings/box64-archive-keyring.gpg" | tee /etc/apt/sources.list.d/box64.sources >/dev/null
+
+apt update
+apt install box64-generic-arm box86-generic-arm:armhf -y
 rm -rf /var/lib/apt/lists/*
-git clone --recurse-submodules https://github.com/FEX-Emu/FEX.git
-cd FEX
-mkdir Build
-cd Build
-CC=clang CXX=clang++ cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DUSE_LINKER=lld -DENABLE_LTO=True -DBUILD_TESTS=False -DENABLE_ASSERTIONS=False -G Ninja ..
-ninja
-ls -lah
-ninja install
-ninja binfmt_misc_32
-ninja binfmt_misc_64
-cd ../../
-rm -rf FEX
 EOF
 
+COPY files/binfmts/* /usr/share/binfmts
 RUN update-binfmts --import
 
 RUN useradd -m -s /bin/bash -G sudo,video,input,audio,render ${user} \
   && echo "${user}:${user}" | chpasswd \
   && echo '%sudo ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
-COPY files/start_fex.sh /start.sh
+COPY files/start.sh /start.sh
 COPY files/wayfire.ini /home/${user}/.config/wayfire.ini
 COPY files/novnc_audio/* /home/${user}/novnc_audio/
 
@@ -66,7 +68,7 @@ RUN mkdir -p /home/${user}/.local/share/lutris/runners/wine/ \
 
 RUN mkdir -p /Games \
   && echo "load-module module-native-protocol-tcp auth-anonymous=1" >> /etc/pulse/default.pa \
-  && chown -R ${user}:${user} /home/${user}
+  && find /home/${user} -not -user ${user} -exec chown ${user}:${user} {} \;
 
 USER ${user}
 RUN <<EOF
@@ -87,6 +89,11 @@ export DBUS_FATAL_WARNINGS=0
 ~/steam/bin/steam $@" > steam
 chmod +x steam
 sudo mv steam /usr/local/bin/
+sudo apt-get update 
+sudo apt-get install -y -q  libc6:armhf libsdl2-2.0-0:armhf libsdl2-image-2.0-0:armhf libsdl2-mixer-2.0-0:armhf \
+libsdl2-ttf-2.0-0:armhf libopenal1:armhf libpng16-16:armhf libfontconfig1:armhf libxcomposite1:armhf libbz2-1.0:armhf \
+libxtst6:armhf libsm6:armhf libice6:armhf libgl1:armhf libxinerama1:armhf libxdamage1:armhf libibus-1.0-5
+sudo apt install libgl1-mesa-dri:armhf -y -q
 EOF
 
 RUN cd ~ \

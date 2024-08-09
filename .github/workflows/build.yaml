@@ -25,13 +25,13 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile.fex
+          file: Fex.dockerfile
           platforms: linux/arm64
           tags: lesvu/vn_vnc:fex
       - name: Build and push Box64 Image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile.boxed
+          file: Boxed.dockerfile
           platforms: linux/arm64
           tags: lesvu/vn_vnc:boxed

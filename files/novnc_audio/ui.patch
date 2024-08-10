@@ -1,5 +1,5 @@
 diff --git a/app/ui.js b/app/ui.js
-index f27dfe2..46ceb74 100644
+index 90dc718..78171ee 100644
 --- a/app/ui.js
 +++ b/app/ui.js
 @@ -17,6 +17,7 @@ import keysyms from "../core/input/keysymdef.js";
@@ -10,15 +10,15 @@ index f27dfe2..46ceb74 100644
  
  const PAGE_TITLE = "noVNC";
  
-@@ -1042,6 +1043,7 @@ const UI = {
-         url += '/' + path;
+@@ -1031,6 +1032,7 @@ const UI = {
+         }
  
          try {
 +	    UI.audio = WsAudio();
-             UI.rfb = new RFB(document.getElementById('noVNC_container'), url,
+             UI.rfb = new RFB(document.getElementById('noVNC_container'),
+                              url.href,
                               { shared: UI.getSetting('shared'),
-                                repeaterID: UI.getSetting('repeaterID'),
-@@ -1074,6 +1076,7 @@ const UI = {
+@@ -1064,6 +1066,7 @@ const UI = {
      },
  
      disconnect() {

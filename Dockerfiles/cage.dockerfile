@@ -22,7 +22,7 @@ apt-get install -q -y --no-install-recommends \
   apt-transport-https ca-certificates sudo gpg-agent software-properties-common zlib1g-dev \
   zstd gettext libcurl4-openssl-dev inetutils-ping jq wget dirmngr locales libibus-1.0-5
 
-apt-get install -q -y --no-install-recommends lutris git binfmt-support wayvnc cage xwayland \
+apt-get install -q -y lutris git binfmt-support wayvnc cage xwayland \
   zenity pulseaudio nodejs npm fonts-noto-cjk mesa-vulkan-drivers libgl1-mesa-dri libglx-mesa0
 rm -rf /var/lib/apt/lists/*
 EOF
@@ -52,6 +52,7 @@ RUN useradd -m -s /bin/bash -u 1000 -G sudo,video,audio ${user} \
   && echo "${user}:${user}" | chpasswd \
   && echo '%sudo ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
+COPY files/cage /usr/bin/cage
 COPY files/start.sh /start.sh
 COPY files/novnc_audio/* /home/${user}/novnc_audio/
 

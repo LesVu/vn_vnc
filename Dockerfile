@@ -1,29 +1,40 @@
-FROM debian:sid as base
+FROM debian:sid AS base
 ARG USER=abc
+ARG CAGE=1
 
 LABEL maintainer="LesVu"
+
+ENV CAGE=${CAGE}
+ENV USER=${USER}
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games
-ENV WLR_RENDER_DRM_DEVICE=/dev/dri/card1
+ENV WLR_RENDER_DRM_DEVICE=/dev/dri/renderD128
 
 RUN <<EOF
-dpkg --add-architecture armhf
 echo "Types: deb
-URIs: http://deb.debian.org/debian
+URIs: http://mirror.sg.gs/debian
 Suites: sid
 Components: main contrib non-free non-free-firmware
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg" > /etc/apt/sources.list.d/debian.sources
 apt-get update 
 apt-get full-upgrade -y -q 
-apt-get install libc6:armhf -y -q
 
 apt-get install -q -y --no-install-recommends \
   gnupg lsb-release curl tar unzip zip xz-utils \
   apt-transport-https ca-certificates sudo gpg-agent software-properties-common python3-numpy zlib1g-dev \
-  zstd gettext libcurl4-openssl-dev inetutils-ping jq wget dirmngr openssh-client locales
+  zstd gettext libcurl4-openssl-dev inetutils-ping jq wget dirmngr locales git
 
-apt-get install -q -y --no-install-recommends lutris git binfmt-support wayvnc wf-shell wayfire xwayland \
-  kanshi xterm dbus-x11 vim zenity pulseaudio bemenu nodejs cmake npm 7zip-rar fonts-noto-cjk
+apt-get install -q -y --no-install-recommends xterm zenity pulseaudio fonts-noto-cjk nodejs npm
+
+if [ -n "$CAGE" ]; then
+  apt-get install -q -y cage
+else 
+  apt-get install -q -y wayfire 
+fi
+
+apt-get install -q -y --no-install-suggests lutris wayvnc xwayland socat gstreamer1.0-tools \
+  gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad websockify
+
 rm -rf /var/lib/apt/lists/*
 EOF
 
@@ -38,12 +49,6 @@ COPY files/novnc_audio/* /home/${USER}/novnc_audio/
 RUN sed -i "s/# \(en_US\.UTF-8 .*\)/\1/" /etc/locale.gen \
   && sed -i "s/# \(ja_JP\.UTF-8 .*\)/\1/" /etc/locale.gen \
   && locale-gen
-
-RUN mkdir -p /home/${USER}/.local/share/lutris/runners/wine/ \
-  && cd /home/${USER}/.local/share/lutris/runners/wine/ \
-  && curl -L https://github.com/GloriousEggroll/wine-ge-custom/releases/download/GE-Proton8-26/wine-lutris-GE-Proton8-26-x86_64.tar.xz -o wine.tar.xz \
-  && tar -xf wine.tar.xz \
-  && rm wine.tar.xz
 
 RUN mkdir -p /Games \
   && echo "load-module module-native-protocol-tcp auth-anonymous=1" >> /etc/pulse/default.pa \
@@ -74,19 +79,19 @@ RUN cd ~ \
   && git clone https://github.com/novnc/noVNC \
   && cd novnc_audio \
   && npm i \
-  && cp audio.js pcm-player.js ~/noVNC \
+  && cp audio.js ~/noVNC \
   && cd ~/noVNC \
   && git apply ../novnc_audio/ui.patch
 
 
 WORKDIR /home/${USER}
 CMD [ "/start.sh" ]
-EXPOSE 4713 5700 5900 6080
+EXPOSE 4713 5700 5900 6100
 VOLUME [ "/Games" ]
 
 
 
-FROM base as boxed
+FROM base AS boxed
 
 RUN <<EOF
 wget -qO- "https://pi-apps-coders.github.io/box86-debs/KEY.gpg" | sudo gpg --dearmor -o /usr/share/keyrings/box86-archive-keyring.gpg
@@ -103,7 +108,7 @@ Signed-By: /usr/share/keyrings/box64-archive-keyring.gpg" | sudo tee /etc/apt/so
 
 sudo dpkg --add-architecture armhf
 sudo apt-get update
-sudo apt-get install -y box64-generic-arm box86-generic-arm:armhf
+sudo apt-get install -y box64-generic-arm box86-generic-arm:armhf binfmt-support
 sudo apt-get install -y libc6:armhf libsdl2-2.0-0:armhf libsdl2-image-2.0-0:armhf libsdl2-mixer-2.0-0:armhf \
 libsdl2-ttf-2.0-0:armhf libopenal1:armhf libpng16-16:armhf libfontconfig1:armhf libxcomposite1:armhf libbz2-1.0:armhf \
 libxtst6:armhf libsm6:armhf libice6:armhf libgl1:armhf libxinerama1:armhf libxdamage1:armhf libibus-1.0-5
@@ -115,7 +120,7 @@ COPY --chown=root:root files/binfmts/* /usr/share/binfmts
 RUN sudo update-binfmts --import
 
 
-FROM base as fex
+FROM base AS fex
 
 RUN <<EOF
 sudo apt-get update

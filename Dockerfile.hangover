@@ -1,0 +1,94 @@
+FROM debian:sid AS base
+ARG USER=abc
+ARG CAGE=1
+
+LABEL maintainer="LesVu"
+
+ENV CAGE=${CAGE}
+ENV USER=${USER}
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games
+ENV WLR_RENDER_DRM_DEVICE=/dev/dri/renderD128
+
+RUN <<EOF
+echo "Types: deb
+URIs: http://mirror.sg.gs/debian
+Suites: sid
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg" > /etc/apt/sources.list.d/debian.sources
+apt-get update 
+apt-get full-upgrade -y -q
+
+apt-get install -q -y --no-install-recommends --no-install-suggests \
+  gnupg lsb-release curl tar unzip zip xz-utils \
+  apt-transport-https ca-certificates sudo gpg-agent software-properties-common python3-numpy zlib1g-dev \
+  zstd gettext libcurl4-openssl-dev inetutils-ping jq wget dirmngr locales git \
+  alacritty zenity pulseaudio fonts-noto-cjk nodejs npm
+
+apt-get install -q -y --no-install-suggests wayvnc xwayland labwc mesa-vulkan-drivers
+
+rm -rf /var/lib/apt/lists/*
+EOF
+
+RUN useradd -m -s /bin/bash -u 1000 -G sudo,video,audio ${USER} \
+  && echo "${USER}:${USER}" | chpasswd \
+  && echo '%sudo ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+
+COPY files/novnc_audio/* /home/${USER}/novnc_audio/
+
+RUN sed -i "s/# \(en_US\.UTF-8 .*\)/\1/" /etc/locale.gen \
+  && sed -i "s/# \(ja_JP\.UTF-8 .*\)/\1/" /etc/locale.gen \
+  && locale-gen \
+  && mkdir -p /Games \
+  && echo "load-module module-native-protocol-tcp auth-anonymous=1" >> /etc/pulse/default.pa
+
+RUN cd /home/${USER} \
+  && git clone https://github.com/novnc/noVNC \
+  && cd novnc_audio \
+  && npm i \
+  && cp audio.js /home/${USER}/noVNC \
+  && cd /home/${USER}/noVNC \
+  && git apply /home/${USER}/novnc_audio/ui.patch \
+  && wget -q https://github.com/AndreRH/hangover/releases/download/hangover-10.0-rc4/hangover_10.0-rc4_debian13_trixie_arm64.tar -O hangover.tar \
+  && tar xf hangover.tar \
+  && apt update \
+  && apt install -q -y --no-install-suggests ./*.deb \
+  && rm -rf hangover.tar *.deb \
+  && mv dxvk*.tar.gz /home/${USER} \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN <<EOF
+echo '#!/bin/bash
+export XDG_RUNTIME_DIR=/run/user/1000 WLR_LIBINPUT_NO_DEVICES=1 WLR_BACKENDS=headless
+
+sudo chown root:video /dev/dri/*
+sudo mkdir -p $XDG_RUNTIME_DIR
+sudo chown "$(id -nu)":"$(id -ng)" $XDG_RUNTIME_DIR
+
+pulseaudio --start --exit-idle-time=-1 &
+node ~/novnc_audio/audify.js &
+labwc -s "wayvnc 0.0.0.0" &
+~/noVNC/utils/novnc_proxy --vnc localhost:5900 --listen 6100' > /start.sh
+chmod +x /start.sh
+
+mkdir -p /home/${USER}/.config/labwc
+echo '<?xml version="1.0" encoding="UTF-8"?>
+<openbox_menu>
+<menu id="root-menu">
+  <item label="Terminal">
+    <action name="Execute" command="alacritty" />
+  </item>
+  <item label="Reconfigure">
+    <action name="Reconfigure" />
+  </item>
+</menu>
+</openbox_menu>' > /home/${USER}/.config/labwc/menu.xml
+EOF
+
+RUN find /home/${USER} -not -user ${USER} -exec chown ${USER}:${USER} {} \;
+
+USER ${USER}
+WORKDIR /home/${USER}
+CMD [ "/start.sh" ]
+EXPOSE 4713 5700 5900 6100
+VOLUME [ "/Games" ]

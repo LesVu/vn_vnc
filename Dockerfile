@@ -32,8 +32,7 @@ else
   apt-get install -q -y wayfire 
 fi
 
-apt-get install -q -y --no-install-suggests lutris wayvnc xwayland socat gstreamer1.0-tools \
-  gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad websockify
+apt-get install -q -y --no-install-suggests lutris wayvnc xwayland
 
 rm -rf /var/lib/apt/lists/*
 EOF

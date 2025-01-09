@@ -20,7 +20,7 @@ pulseaudio --start --exit-idle-time=-1 &
 node ~/novnc_audio/audify.js &
 
 if [ -n "$CAGE" ]; then
-	cage -d -- bash -c "wayvnc 0.0.0.0 & xterm" &
+	cage -d -- bash -c "wayvnc 0.0.0.0 & lutris" &
 else
 	wayfire &
 fi

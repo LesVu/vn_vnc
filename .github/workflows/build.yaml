@@ -29,6 +29,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          target: base
           platforms: linux/amd64
           tags: lesvu/vn_vnc:base
 

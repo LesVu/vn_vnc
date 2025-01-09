@@ -31,6 +31,7 @@ jobs:
           context: .
           target: base
           platforms: linux/amd64
+          push: true
           tags: lesvu/vn_vnc:base
 
       - name: Build and push Hangover Image
@@ -39,4 +40,5 @@ jobs:
           context: .
           file: Dockerfile.hangover
           platforms: linux/arm64
+          push: true
           tags: lesvu/vn_vnc:hangover

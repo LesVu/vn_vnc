@@ -1,0 +1,9 @@
+#!/bin/bash
+
+swaybg -i ~/.config/wallpaper.png -m fill &
+
+# Launch a panel such as yambar or waybar.
+waybar >/dev/null 2>&1 &
+
+# VNC
+wayvnc 0.0.0.0 &

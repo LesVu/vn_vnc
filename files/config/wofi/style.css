@@ -1,0 +1,16 @@
+#input {
+  border-radius: 0px;
+}
+
+#inner-box {
+  padding: 5px;
+  border-radius: 10px;
+}
+
+#box{
+  margin: 5px;
+}
+
+*{
+font-family: Hack Nerd Font;
+}

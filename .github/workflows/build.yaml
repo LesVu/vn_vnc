@@ -3,7 +3,7 @@ name: Build
 on:
   schedule:
     # * is a special character in YAML so you have to quote this string
-    - cron: "0 4 */2 * *"
+    - cron: "0 4 14,28 * *"
   workflow_dispatch:
 
 jobs:
@@ -30,7 +30,7 @@ jobs:
         with:
           context: .
           target: base
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: lesvu/vn_vnc:base
 
@@ -38,7 +38,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile.hangover
+          target: hangover
           platforms: linux/arm64
           push: true
           tags: lesvu/vn_vnc:hangover

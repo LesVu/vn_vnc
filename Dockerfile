@@ -1,93 +1,82 @@
+FROM rust:latest AS builder
+WORKDIR /usr/src/audio_feed
+RUN apt-get update && apt-get install -y -q cmake pkg-config libasound2-dev libpulse-dev
+COPY files/audio_feed .
+RUN cargo install --path .
+
+
 FROM debian:sid AS base
 ARG USER=abc
-ARG CAGE=1
 
 LABEL maintainer="LesVu"
 
-ENV CAGE=${CAGE}
 ENV USER=${USER}
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games
 ENV WLR_RENDER_DRM_DEVICE=/dev/dri/renderD128
 
-RUN <<EOF
-echo "Types: deb
-URIs: http://mirror.sg.gs/debian
-Suites: sid
-Components: main contrib non-free non-free-firmware
-Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg" > /etc/apt/sources.list.d/debian.sources
-apt-get update 
-apt-get full-upgrade -y -q 
+# RUN echo "Types: deb \nURIs: http://mirror.sg.gs/debian \nSuites: sid \nComponents: main contrib non-free non-free-firmware \nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg" > /etc/apt/sources.list.d/debian.sources \
 
-apt-get install -q -y --no-install-recommends \
+RUN apt-get update \
+  && apt-get full-upgrade -y -q \
+  && apt-get install -q -y --no-install-recommends --no-install-suggests \
   gnupg lsb-release curl tar unzip zip xz-utils \
   apt-transport-https ca-certificates sudo gpg-agent software-properties-common python3-numpy zlib1g-dev \
-  zstd gettext libcurl4-openssl-dev inetutils-ping jq wget dirmngr locales git
-
-apt-get install -q -y --no-install-recommends xterm zenity pulseaudio fonts-noto-cjk nodejs npm
-
-if [ -n "$CAGE" ]; then
-  apt-get install -q -y cage
-else 
-  apt-get install -q -y wayfire 
-fi
-
-apt-get install -q -y --no-install-suggests lutris wayvnc xwayland
-
-rm -rf /var/lib/apt/lists/*
-EOF
+  zstd gettext libcurl4-openssl-dev inetutils-ping jq wget dirmngr locales git unzip \
+  alacritty zenity pulseaudio fonts-noto-cjk pcmanfm chromium pavucontrol wofi dbus-x11 nodejs npm \
+  && apt-get install -q -y --no-install-suggests wayvnc xwayland labwc waybar swaybg mesa-vulkan-drivers \
+  && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -m -s /bin/bash -u 1000 -G sudo,video,audio ${USER} \
   && echo "${USER}:${USER}" | chpasswd \
   && echo '%sudo ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
-COPY files/start.sh /start.sh
-COPY files/wayfire.ini /home/${USER}/.config/wayfire.ini
-COPY files/novnc_audio/* /home/${USER}/novnc_audio/
-
 RUN sed -i "s/# \(en_US\.UTF-8 .*\)/\1/" /etc/locale.gen \
   && sed -i "s/# \(ja_JP\.UTF-8 .*\)/\1/" /etc/locale.gen \
-  && locale-gen
+  && locale-gen \
+  && mkdir -p /Games \
+  && echo "load-module module-native-protocol-tcp auth-anonymous=1" >> /etc/pulse/default.pa
 
-RUN mkdir -p /Games \
-  && echo "load-module module-native-protocol-tcp auth-anonymous=1" >> /etc/pulse/default.pa \
-  && find /home/${USER} -not -user ${USER} -exec chown ${USER}:${USER} {} \;
+RUN wget -q https://github.com/ryanoasis/nerd-fonts/releases/download/v3.3.0/Hack.zip -O Hack.zip \
+  && unzip Hack.zip -d /usr/local/share/fonts \
+  && git clone https://github.com/yeyushengfan258/Reversal-icon-theme icon-theme \
+  && cd icon-theme \
+  && bash install.sh -purple \
+  && cd .. \
+  && rm -rf icon-theme Hack.zip \
+  && fc-cache -fv
 
-USER ${USER}
-RUN <<EOF
-cd 
-mkdir -p ~/steam/tmp 
-cd ~/steam/tmp 
-wget -q https://cdn.cloudflare.steamstatic.com/client/installer/steam.deb
-ar x steam.deb
-tar xf data.tar.xz
-rm ./*.tar.xz ./steam.deb
-mv ./usr/* ../
-cd ../
-rm -rf ./tmp/
-echo "#!/bin/bash
-export STEAMOS=1
-export STEAM_RUNTIME=1
-export DBUS_FATAL_WARNINGS=0
-~/steam/bin/steam $@" > steam
-chmod +x steam
-sudo mv steam /usr/local/bin/
-EOF
+COPY files/start.sh /start.sh
+COPY files/config /home/${USER}/.config/
+COPY files/novnc_audio/* /home/${USER}/novnc_audio/
+COPY --from=builder /usr/local/cargo/bin/audio_feed /usr/local/bin/audio_feed
 
-RUN cd ~ \
+RUN cd /home/${USER} \
   && git clone https://github.com/novnc/noVNC \
   && cd novnc_audio \
-  && npm i \
-  && cp audio.js ~/noVNC \
-  && cd ~/noVNC \
-  && git apply ../novnc_audio/ui.patch
+  && cp audio.js /home/${USER}/noVNC \
+  && cd /home/${USER}/noVNC \
+  && git apply /home/${USER}/novnc_audio/ui.patch
 
+RUN find /home/${USER} -not -user ${USER} -exec chown ${USER}:${USER} {} \;
 
+USER ${USER}
 WORKDIR /home/${USER}
 CMD [ "/start.sh" ]
 EXPOSE 4713 5700 5900 6100
 VOLUME [ "/Games" ]
 
+
+FROM base AS hangover
+ARG HANGOVER_VERSION=10.2
+
+RUN cd \
+  && wget -q https://github.com/AndreRH/hangover/releases/download/hangover-${HANGOVER_VERSION}/hangover_${HANGOVER_VERSION}_debian13_trixie_arm64.tar -O hangover.tar \
+  && tar xf hangover.tar \
+  && sudo apt-get update \
+  && sudo apt-get install -q -y --no-install-suggests ./*.deb \
+  && rm -rf hangover.tar *.deb \
+  && sudo rm -rf /var/lib/apt/lists/*
 
 
 FROM base AS boxed

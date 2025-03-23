@@ -1,0 +1,20 @@
+##
+## Force Mozilla software like Firefox and Thunderbird to use wayland backend.
+## Firefox (>= v121) enables Wayland by default, but we include this note here
+## for those on non-rolling distributions.
+##
+
+MOZ_ENABLE_WAYLAND=1
+
+##
+## Disable hardware cursors. Most users would not want to do this, but if you
+## are experiencing issues with disappearing cursors, this might fix it.
+##
+
+WLR_NO_HARDWARE_CURSORS=1
+
+XDG_CURRENT_DESKTOP=wlroots
+QT_QPA_PLATFORMTHEME=qt6ct
+XCURSOR_THEME=Future-black-cursors
+XCURSOR_SIZE=24
+XKB_DEFAULT_LAYOUT=es
